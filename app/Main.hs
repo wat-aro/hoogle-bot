@@ -3,7 +3,7 @@ module Main where
 import Web.Slack
 import System.Environment (lookupEnv)
 import Data.Maybe (fromMaybe)
-import Lib
+import HoogleBot
 
 main :: IO ()
 main = do

@@ -22,9 +22,22 @@ hoogleBot _ = return ()
 send :: ChannelId -> T.Text -> Slack s ()
 send cid target =
   (sendMessage cid =<<) . liftIO $ do
-    (_, stdout, _, _) <- runInteractiveProcess  "stack" (searchWords (T.unpack target)) Nothing Nothing
-    seeearched <- hGetContents stdout
+    (_, out, _, _) <- runInteractiveCommand str
+    seeearched <- System.IO.hGetContents out
     return $ T.pack seeearched
+  where
+    str = searchWords $ T.unpack target
 
-searchWords :: String -> [String]
-searchWords target = ["exec", "hoogle"] ++ words target ++ ["--", "--count=30"]
+searchWords :: String -> String
+searchWords target = "stack exec hoogle '" ++ escapeReplace target ++ "'"
+
+escapeReplace :: String -> String
+escapeReplace "" = ""
+escapeReplace ('&' : rest) = case rest of
+                               "" -> "$"
+                               [s] -> s : ""
+                               ('l' : 't' : ';' : xss) -> "<" ++ escapeReplace xss
+                               ('g' : 't' : ';' : xss) -> ">" ++ escapeReplace xss
+                               ('a' : 'm' : 'p' : ';' : xss) -> "&" ++ escapeReplace xss
+                               _ -> '&' : escapeReplace rest
+escapeReplace (x:xs) = x : escapeReplace xs
